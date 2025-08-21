@@ -1,0 +1,606 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Laboratorio Cuántico: Electrólisis & Creación</title>
+<style>
+  :root{
+    --bg:#070b1a;
+    --bg-soft:#0c1330;
+    --card:#0f1842;
+    --edge:#1f2a66;
+    --accent:#5ad0ff;
+    --accent-2:#7ef3c9;
+    --warn:#ffb857;
+    --danger:#ff6b7a;
+    --ok:#6dff8a;
+    --text:#e6f1ff;
+    --muted:#a9bfeb;
+    --grid:#2a396e;
+    --glow:0 0 18px rgba(90,208,255,.45),0 0 3px rgba(126,243,201,.4) inset;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0; font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif;
+    color:var(--text); background:radial-gradient(1200px 600px at 10% -10%, #0b1440 0%, transparent 60%), var(--bg);
+    overflow:hidden;
+  }
+  header{
+    display:flex; align-items:center; gap:16px; padding:14px 18px;
+    border-bottom:1px solid var(--edge); background:linear-gradient(180deg, rgba(20,33,84,.7), rgba(11,17,45,.5));
+    position:relative; z-index:3;
+  }
+  .logo{
+    width:44px; height:44px; border-radius:10px; background:conic-gradient(from 210deg, var(--accent), var(--accent-2), #9bb7ff, var(--accent));
+    box-shadow:0 0 24px rgba(90,208,255,.55);
+    position:relative; overflow:hidden;
+  }
+  .logo::after{content:"λ"; position:absolute; inset:0; display:grid; place-items:center; font-weight:800; color:#02112a; font-size:26px; mix-blend-mode:soft-light}
+  h1{font-size:18px; margin:0}
+  .sub{color:var(--muted); font-size:12px}
+  .shell{
+    display:grid; grid-template-columns:320px 1fr; height:calc(100% - 72px);
+  }
+  aside{
+    border-right:1px solid var(--edge); backdrop-filter: blur(6px);
+    background:linear-gradient(180deg, rgba(7,12,33,.75), rgba(7,12,33,.35));
+    overflow:auto; padding:16px;
+  }
+  main{position:relative; overflow:auto; padding:18px}
+  .panel{
+    background:linear-gradient(180deg, rgba(18,28,74,.7), rgba(10,17,49,.6));
+    border:1px solid var(--edge); border-radius:14px; box-shadow:var(--glow);
+  }
+  .nav{
+    display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap;
+  }
+  .nav button{
+    flex:1; padding:10px 12px; border-radius:10px; border:1px solid var(--edge);
+    background:var(--card); color:var(--text); cursor:pointer;
+  }
+  .nav button.active{outline:2px solid var(--accent); box-shadow:0 0 18px rgba(90,208,255,.35)}
+  .section{display:none}
+  .section.active{display:block}
+  .hint{font-size:12px; color:var(--muted)}
+  .grid{
+    display:grid; gap:12px;
+  }
+  .rooms{
+    display:grid; grid-template-columns:1.2fr .8fr; gap:16px;
+  }
+  .machine{
+    padding:16px; display:grid; gap:14px;
+  }
+  .slots{display:grid; grid-template-columns:repeat(3,1fr); gap:10px}
+  .slot{
+    min-height:92px; border:1px dashed var(--grid); border-radius:12px; padding:8px;
+    display:grid; align-content:start; gap:6px; background:rgba(12,19,48,.6);
+  }
+  .slot h4{margin:0; font-size:12px; color:var(--muted)}
+  .slot .dropzone{
+    border:1px solid var(--edge); border-radius:10px; min-height:56px; display:flex; align-items:center; justify-content:center;
+    background:rgba(22,33,84,.5)
+  }
+  .controls{
+    display:grid; grid-template-columns:1fr 1fr; gap:12px; align-items:end;
+  }
+  .ctrl{
+    background:rgba(10,17,49,.55); border:1px solid var(--edge); border-radius:12px; padding:10px;
+  }
+  label{font-size:12px; color:var(--muted)}
+  input[type="range"]{width:100%}
+  .run{
+    padding:12px 14px; border-radius:12px; border:1px solid var(--edge); background:linear-gradient(180deg, #103a5f, #0d2f4b);
+    color:#e9fcff; cursor:pointer; font-weight:700; letter-spacing:.3px;
+  }
+  .terminal{
+    background:rgba(4,8,22,.75); border:1px solid var(--edge); border-radius:12px; padding:12px; min-height:90px; font-family:ui-monospace, SFMono-Regular, Menlo, monospace; font-size:12px;
+  }
+  .tag{
+    display:inline-flex; align-items:center; gap:6px; border:1px solid var(--edge); background:rgba(9,16,44,.8); padding:6px 8px; border-radius:999px; cursor:grab;
+    user-select:none;
+  }
+  .tag .sym{font-weight:900; font-size:14px}
+  .tag .name{color:var(--muted); font-size:12px}
+  .tag[data-type="gas"]{box-shadow:0 0 0 1px rgba(90,208,255,.25) inset}
+  .tag[data-type="metal"]{box-shadow:0 0 0 1px rgba(126,243,201,.25) inset}
+  .tag[data-type="nonmetal"]{box-shadow:0 0 0 1px rgba(255,184,87,.25) inset}
+  .tag.small{transform:scale(.95)}
+  .ptable{
+    display:grid; grid-template-columns:repeat(18, 44px); gap:6px; padding:12px; overflow:auto;
+    background:rgba(5,10,28,.5); border-top:1px solid var(--edge);
+  }
+  .el{
+    width:44px; height:52px; border:1px solid var(--edge); border-radius:8px; display:grid; place-items:center; gap:2px; padding:4px; text-align:center; cursor:grab; user-select:none;
+    background:linear-gradient(180deg, rgba(20,34,86,.7), rgba(8,14,40,.7));
+  }
+  .el .Z{font-size:9px; color:var(--muted)}
+  .el .S{font-weight:900}
+  .el .N{font-size:9px; color:var(--muted)}
+  .el.g-metal{outline:1px solid rgba(126,243,201,.35)}
+  .el.g-nonmetal{outline:1px solid rgba(255,184,87,.35)}
+  .el.g-gas{outline:1px solid rgba(90,208,255,.35)}
+  .toolbar{
+    display:flex; gap:8px; flex-wrap:wrap; padding:10px; border-bottom:1px solid var(--edge);
+  }
+  .switch{display:flex; align-items:center; gap:8px}
+  .inventory, .blueprints{
+    padding:12px; display:grid; gap:12px;
+  }
+  .board{
+    min-height:220px; border:1px dashed var(--grid); border-radius:12px; padding:10px; display:grid; grid-template-columns:repeat(6, 1fr); gap:8px; background:rgba(10,17,40,.5)
+  }
+  .chip{
+    border:1px solid var(--edge); border-radius:10px; padding:8px; background:rgba(17,28,70,.7); display:grid; gap:4px; min-height:72px
+  }
+  .chip h5{margin:0; font-size:12px}
+  .chip .desc{font-size:11px; color:var(--muted)}
+  .toast{
+    position:fixed; right:14px; bottom:14px; background:#0b173e; border:1px solid var(--edge); padding:10px 12px; border-radius:10px; box-shadow:var(--glow); display:none;
+  }
+  .kbd{font-family:ui-monospace, monospace; font-size:11px; border:1px solid var(--edge); padding:1px 6px; border-radius:6px; color:var(--muted)}
+  .canvas-wrap{position:absolute; inset:0; pointer-events:none}
+  .sr-only{position:absolute !important; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0}
+  @media (max-width:1100px){
+    .shell{grid-template-columns:1fr}
+    aside{height:260px; order:2}
+    main{order:1}
+    .rooms{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+  <header>
+    <div class="logo" aria-hidden="true"></div>
+    <div>
+      <h1>Laboratorio Cuántico del Científico Loco</h1>
+      <div class="sub">Electrólisis, invenciones imposibles y una pizca de mecánica cuántica estilosa ✨</div>
+    </div>
+    <div style="margin-left:auto; display:flex; gap:8px; align-items:center">
+      <div class="switch">
+        <input id="qmode" type="checkbox" />
+        <label for="qmode">Modo Cuántico</label>
+      </div>
+    </div>
+  </header>
+
+  <div class="shell">
+    <aside class="panel">
+      <div class="toolbar">
+        <span class="hint">Consejos: arrastra elementos a los slots. <span class="kbd">R</span> reinicia máquina.</span>
+      </div>
+      <div class="inventory">
+        <div class="panel" style="padding:10px">
+          <strong>Historial de Resultados</strong>
+          <div id="history" class="terminal" aria-live="polite"></div>
+        </div>
+        <div class="panel" style="padding:10px">
+          <strong>Recetas Descubiertas</strong>
+          <div id="recipes" class="blueprints"></div>
+        </div>
+      </div>
+    </aside>
+
+    <main>
+      <div class="nav">
+        <button class="tab active" data-target="electrolisis">Sala de la Electrólisis</button>
+        <button class="tab" data-target="creacion">Sala de la Creación</button>
+        <button class="tab" data-target="tabla">Tabla de Elementos</button>
+      </div>
+
+      <!-- SALA ELECTRÓLISIS -->
+      <section id="electrolisis" class="section active panel machine">
+        <div class="rooms">
+          <div class="panel" style="padding:14px">
+            <h3 style="margin:0 0 8px">Máquina de Electrólisis Mk-IV</h3>
+            <div class="hint">Arrastra un elemento al <b>Ánodo</b>, otro al <b>Cátodo</b> y un <b>Electrolito</b>. Ajusta parámetros y pulsa <b>Iniciar</b>.</div>
+            <div class="slots" aria-label="Slots de electrólisis">
+              <div class="slot" data-slot="anode">
+                <h4>Ánodo</h4>
+                <div class="dropzone" tabindex="0"></div>
+              </div>
+              <div class="slot" data-slot="cathode">
+                <h4>Cátodo</h4>
+                <div class="dropzone" tabindex="0"></div>
+              </div>
+              <div class="slot" data-slot="electrolyte">
+                <h4>Electrolito</h4>
+                <div class="dropzone" tabindex="0"></div>
+              </div>
+            </div>
+            <div class="controls">
+              <div class="ctrl">
+                <label for="voltage">Voltaje (V): <span id="vOut">5</span></label>
+                <input id="voltage" type="range" min="1" max="30" value="5" />
+              </div>
+              <div class="ctrl">
+                <label for="time">Tiempo (s): <span id="tOut">10</span></label>
+                <input id="time" type="range" min="1" max="60" value="10" />
+              </div>
+              <button id="run" class="run">⚡ Iniciar Electrólisis</button>
+              <button id="reset" class="run" style="background:linear-gradient(180deg,#3a1146,#290b32)">↺ Reiniciar</button>
+            </div>
+            <div class="terminal" id="log" aria-live="polite"></div>
+          </div>
+
+          <div class="panel" style="padding:14px">
+            <h3 style="margin:0 0 8px">Componentes Destacados</h3>
+            <div id="featured" class="grid" style="grid-template-columns:repeat(2,1fr)"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SALA CREACIÓN -->
+      <section id="creacion" class="section panel">
+        <div class="inventory">
+          <div class="hint">Combina resultados de la electrólisis para fabricar artefactos imposibles.</div>
+          <div class="board" id="board" aria-label="Tablero de creación">
+            <!-- Slots flexibles para chips -->
+          </div>
+          <button id="fabricar" class="run" style="margin-top:10px">🛠️ Fabricar Invento</button>
+          <div id="factoryLog" class="terminal" style="margin-top:10px"></div>
+        </div>
+      </section>
+
+      <!-- TABLA PERIÓDICA -->
+      <section id="tabla" class="section panel">
+        <div class="toolbar">
+          <span class="hint">Arrastra elementos desde aquí a cualquier slot o tablero.</span>
+        </div>
+        <div id="ptable" class="ptable" aria-label="Tabla periódica visual">
+          <!-- Se rellena por JS -->
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div class="canvas-wrap">
+    <canvas id="quantum"></canvas>
+  </div>
+  <div id="toast" class="toast" role="status"></div>
+
+<script>
+/* =======================
+   Núcleo de Datos
+======================= */
+const ELEMENTS = [
+  // Z, Simbolo, Nombre, Grupo visual, tipo
+  [1, "H", "Hidrógeno", "g-gas", "gas"],
+  [2, "He", "Helio", "g-gas", "gas"],
+  [3, "Li", "Litio", "g-metal", "metal"],
+  [4, "Be", "Berilio", "g-metal", "metal"],
+  [5, "B", "Boro", "g-nonmetal", "nonmetal"],
+  [6, "C", "Carbono", "g-nonmetal", "nonmetal"],
+  [7, "N", "Nitrógeno", "g-gas", "gas"],
+  [8, "O", "Oxígeno", "g-gas", "gas"],
+  [9, "F", "Flúor", "g-gas", "gas"],
+  [10, "Ne", "Neón", "g-gas", "gas"],
+  [11, "Na", "Sodio", "g-metal", "metal"],
+  [12, "Mg", "Magnesio", "g-metal", "metal"],
+  [13, "Al", "Aluminio", "g-metal", "metal"],
+  [14, "Si", "Silicio", "g-nonmetal", "nonmetal"],
+  [15, "P", "Fósforo", "g-nonmetal", "nonmetal"],
+  [16, "S", "Azufre", "g-nonmetal", "nonmetal"],
+  [17, "Cl", "Cloro", "g-gas", "gas"],
+  [18, "Ar", "Argón", "g-gas", "gas"],
+  [19, "K", "Potasio", "g-metal", "metal"],
+  [20, "Ca", "Calcio", "g-metal", "metal"],
+  // añade más si quieres; mantenemos 1–20 para agilidad del prototipo
+];
+
+const ELECTROLYTE_HINTS = ["H2O","NaCl","H2SO4","KOH"];
+const SECRET_RECIPES = [
+  { in: ["H","O"], out: "Agua Súperionizada (H₂O*)"},
+  { in: ["Na","Cl"], out: "Sal Cuántica Estable (NaCl⟂)"},
+  { in: ["C","O"], out: "Carbonox (COₓ)"},
+  { in: ["Li","H"], out: "Hidruro Hiperdenso (LiH⁺)"},
+];
+
+const ST = {
+  slots: { anode:null, cathode:null, electrolyte:null },
+  history: [],
+  recipes: new Set(),
+  chips: [], // outputs disponibles para Creación
+};
+
+/* =======================
+   Utilidades UI
+======================= */
+const $ = (q, el=document)=>el.querySelector(q);
+const $$ = (q, el=document)=>Array.from(el.querySelectorAll(q));
+function toast(msg){ const t=$("#toast"); t.textContent=msg; t.style.display="block"; setTimeout(()=>t.style.display="none",1800); }
+function terminal(el, lines){ el.innerHTML = lines.map(l => `<div>${l}</div>`).join(""); el.scrollTop = el.scrollHeight; }
+function makeTag(sym, name, type){ const d=document.createElement("div"); d.className="tag"; d.draggable=true; d.dataset.symbol=sym; d.dataset.name=name; d.dataset.type=type; d.innerHTML=`<span class="sym">${sym}</span><span class="name">${name}</span>`; return d; }
+
+/* =======================
+   Tabla Periódica (visual)
+======================= */
+function renderPTable(){
+  const host = $("#ptable");
+  host.innerHTML = "";
+  // celdas vacías para colocar los primeros elementos en sus posiciones reales (aprox)
+  const positions = {
+    1:1, 2:18, 3:1+18*1, 4:2+18*1, 5:13+18*1,6:14+18*1,7:15+18*1,8:16+18*1,9:17+18*1,10:18+18*1,
+    11:1+18*2,12:2+18*2,13:13+18*2,14:14+18*2,15:15+18*2,16:16+18*2,17:17+18*2,18:18+18*2,
+    19:1+18*3,20:2+18*3
+  };
+  const totalCells = 18*7;
+  for(let i=1;i<=totalCells;i++){
+    const slot = document.createElement("div");
+    slot.style.width="44px"; slot.style.height="52px";
+    host.appendChild(slot);
+  }
+  ELEMENTS.forEach(([Z,S,N,grp,type])=>{
+    const cell = document.createElement("div");
+    cell.className = `el ${grp}`;
+    cell.draggable = true;
+    cell.dataset.symbol=S;
+    cell.dataset.name=N;
+    cell.dataset.type=type;
+    cell.innerHTML = `<div class="Z">${Z}</div><div class="S">${S}</div><div class="N">${N}</div>`;
+    const idx = positions[Z] ?? Z;
+    const container = host.children[idx-1] || host;
+    container.replaceWith(cell);
+  });
+
+  // Drag de elementos de la tabla
+  $$("#tabla .el").forEach(el=>{
+    el.addEventListener("dragstart", ev=>{
+      ev.dataTransfer.setData("text/plain", JSON.stringify({
+        symbol: el.dataset.symbol, name: el.dataset.name, type: el.dataset.type
+      }));
+      ev.dataTransfer.effectAllowed = "copy";
+    });
+  });
+}
+
+/* =======================
+   Máquina de Electrólisis
+======================= */
+function setupSlots(){
+  $$(".dropzone").forEach(z=>{
+    z.addEventListener("dragover", ev=>{ ev.preventDefault(); z.style.outline="2px solid var(--accent)"; ev.dataTransfer.dropEffect="copy"; });
+    z.addEventListener("dragleave", ()=>{ z.style.outline="none"; });
+    z.addEventListener("drop", ev=>{
+      ev.preventDefault(); z.style.outline="none";
+      let data;
+      try{ data = JSON.parse(ev.dataTransfer.getData("text/plain")); }catch(_){ return; }
+      const tag = makeTag(data.symbol, data.name, data.type); tag.classList.add("small");
+      z.innerHTML=""; z.appendChild(tag);
+      const slotName = z.parentElement.dataset.slot;
+      ST.slots[slotName] = data;
+      toast(`${data.symbol} colocado en ${slotName}`);
+    });
+  });
+  // Keyboard paste of electrolyte for accessibility
+  $$(".slot [tabindex]").forEach(dz=>{
+    dz.addEventListener("keydown",(e)=>{
+      if(e.key==="Backspace"){ dz.innerHTML=""; ST.slots[dz.parentElement.dataset.slot]=null; toast("Slot liberado"); }
+    });
+  });
+}
+
+function pseudoElectrolysis(a, c, e, V, T){
+  // Lógica lúdica (no científica): semillas deterministas
+  const key = [a?.symbol, c?.symbol].sort().join("+")+"|"+(e?.symbol||e?.name||"");
+  // recetario secreto
+  const known = SECRET_RECIPES.find(r=> r.in.sort().join("+") === [a?.symbol,c?.symbol].sort().join("+"));
+  let product = known ? known.out : `${a?.symbol||"?"}${c?.symbol||"?"}-${(e?.symbol||"El")}`;
+  // influencias por voltaje/tiempo
+  if(V>20) product += " [Ionizado]";
+  if(T>40) product += " [Metastable]";
+  const quality = Math.min(100, Math.round((V*2 + T*1.5 + (a&&c?20:0) + (e?10:0)) / 1.8));
+  return { product, quality, key };
+}
+
+function runMachine(){
+  const a = ST.slots.anode, c = ST.slots.cathode, e = ST.slots.electrolyte;
+  const V = +$("#voltage").value, T = +$("#time").value;
+  if(!a || !c || !e){ toast("Necesitas Ánodo, Cátodo y Electrolito"); return; }
+  const {product, quality, key} = pseudoElectrolysis(a,c,e,V,T);
+  const line = `⚡ ${a.symbol}/${c.symbol} en ${e.symbol||e.name}: ➜ ${product} (calidad ${quality}%)`;
+  ST.history.unshift(line);
+  ST.history = ST.history.slice(0, 50);
+  terminal($("#log"), [line]);
+  terminal($("#history"), ST.history);
+  // genera chip para creación
+  const chip = { id: crypto.randomUUID(), name: product, quality, key };
+  ST.chips.push(chip);
+  spawnChipOnBoard(chip);
+  // receta descubierta
+  if(SECRET_RECIPES.some(r=> r.in.sort().join("+") === [a.symbol, c.symbol].sort().join("+"))){
+    ST.recipes.add(product);
+    renderRecipes();
+  }
+}
+
+function resetMachine(){
+  ST.slots = { anode:null, cathode:null, electrolyte:null };
+  $$(".dropzone").forEach(z=> z.innerHTML="");
+  $("#log").innerHTML="";
+  toast("Máquina lista.");
+}
+
+/* =======================
+   Sala de Creación
+======================= */
+function spawnChipOnBoard(chip){
+  const card = document.createElement("div");
+  card.className="chip"; card.draggable=true; card.dataset.id=chip.id;
+  card.innerHTML = `<h5>${chip.name}</h5><div class="desc">Calidad ${chip.quality}%</div>`;
+  card.addEventListener("dragstart", ev=>{
+    ev.dataTransfer.setData("text/plain", chip.id);
+    ev.dataTransfer.effectAllowed = "move";
+  });
+  $("#board").appendChild(card);
+}
+function setupBoard(){
+  const board = $("#board");
+  board.addEventListener("dragover", e=>{ e.preventDefault(); e.dataTransfer.dropEffect="move"; board.style.outline="2px solid var(--accent-2)"; });
+  board.addEventListener("dragleave", ()=> board.style.outline="1px dashed var(--grid)");
+  board.addEventListener("drop", e=>{
+    e.preventDefault(); board.style.outline="1px dashed var(--grid)";
+    const id = e.dataTransfer.getData("text/plain");
+    const card = $$(`#creacion .chip`).find(c=> c.dataset.id===id);
+    if(card) board.appendChild(card);
+  });
+  // Permitir arrastrar elementos de la tabla directamente al board como “microchips”
+  $("#tabla").addEventListener("dragstart", e=>{
+    if(e.target.classList.contains("el")){
+      const sym = e.target.dataset.symbol;
+      const card = { id: crypto.randomUUID(), name:`Microchip de ${sym}`, quality: Math.floor(50+Math.random()*50) };
+      ST.chips.push(card);
+      // diferimos un frame para no interferir con DnD original
+      setTimeout(()=> spawnChipOnBoard(card), 0);
+    }
+  });
+}
+
+function craft(){
+  const items = $$("#board .chip");
+  if(items.length<2){ toast("Necesitas al menos 2 componentes para fabricar."); return; }
+  const score = items.reduce((s,el)=> s + parseInt(el.querySelector(".desc").textContent.match(/\d+/)[0]), 0)/items.length;
+  const name = fancyArtifactName(items.length, score);
+  const line = `🛠️ Fabricado: ${name} (rendimiento ${Math.round(score)}%)`;
+  terminal($("#factoryLog"), [line]);
+  ST.history.unshift(line);
+  terminal($("#history"), ST.history);
+  toast("¡Invento creado!");
+}
+
+function fancyArtifactName(n, q){
+  const tiers = q>90?"Ω":q>75?"Σ":q>60?"Δ":"β";
+  const nouns = ["Acelerador de Ideas", "Condensador de Probabilidades", "Transmutador de Cafés", "Amplificador de Genialidad", "Lente de Realidades"];
+  return `${tiers}-${n} ${nouns[Math.floor(Math.random()*nouns.length)]}`;
+}
+
+/* =======================
+   Vistas / Navegación
+======================= */
+function setupNav(){
+  $$(".tab").forEach(b=>{
+    b.addEventListener("click", ()=>{
+      $$(".tab").forEach(x=>x.classList.remove("active"));
+      b.classList.add("active");
+      const tgt = b.dataset.target;
+      $$(".section").forEach(s=> s.classList.toggle("active", s.id===tgt));
+    });
+  });
+}
+
+/* =======================
+   Destacados
+======================= */
+function renderFeatured(){
+  const host = $("#featured"); host.innerHTML="";
+  const picks = ["H","O","Na","Cl","C","Li","S","K"];
+  picks.forEach(sym=>{
+    const el = ELEMENTS.find(e=> e[1]===sym);
+    const tag = makeTag(el[1], el[2], el[4]);
+    tag.title = "Arrastra a un slot";
+    host.appendChild(tag);
+    tag.addEventListener("dragstart", ev=>{
+      ev.dataTransfer.setData("text/plain", JSON.stringify({symbol:el[1], name:el[2], type:el[4]}));
+      ev.dataTransfer.effectAllowed = "copy";
+    });
+  });
+}
+
+function renderRecipes(){
+  const host = $("#recipes"); host.innerHTML="";
+  if(!ST.recipes.size){ host.innerHTML = `<div class="hint">Aún no has descubierto recetas secretas. Prueba con <b>H + O</b> o <b>Na + Cl</b>.</div>`; return; }
+  ST.recipes.forEach(r=>{
+    const div = document.createElement("div");
+    div.className="tag"; div.innerHTML=`<span class="sym">★</span><span class="name">${r}</span>`;
+    host.appendChild(div);
+  });
+}
+
+/* =======================
+   Canvas: Modo Cuántico
+======================= */
+const Q = {
+  canvas: null, ctx:null, particles:[], active:false,
+};
+function initQuantum(){
+  Q.canvas = $("#quantum"); Q.ctx = Q.canvas.getContext("2d");
+  const fit=()=>{ Q.canvas.width = window.innerWidth; Q.canvas.height = window.innerHeight; };
+  window.addEventListener("resize", fit); fit();
+  for(let i=0;i<160;i++){ Q.particles.push(newParticle()); }
+  loop();
+}
+function newParticle(){
+  const w=window.innerWidth, h=window.innerHeight;
+  return { x:Math.random()*w, y:Math.random()*h, vx:(Math.random()-.5)*.6, vy:(Math.random()-.5)*.6, r:1+Math.random()*2, life: 200+Math.random()*300 };
+}
+function loop(){
+  requestAnimationFrame(loop);
+  if(!Q.active) return;
+  const {ctx} = Q; const w=Q.canvas.width, h=Q.canvas.height;
+  ctx.clearRect(0,0,w,h);
+  Q.particles.forEach(p=>{
+    p.x+=p.vx; p.y+=p.vy; p.life--;
+    if(p.x<0||p.x>w) p.vx*=-1; if(p.y<0||p.y>h) p.vy*=-1;
+    if(p.life<0){ Object.assign(p, newParticle()); }
+    ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2); ctx.fillStyle="rgba(122, 246, 210, .35)"; ctx.fill();
+  });
+  // líneas
+  for(let i=0;i<Q.particles.length;i++){
+    const a=Q.particles[i];
+    for(let j=i+1;j<Q.particles.length;j++){
+      const b=Q.particles[j];
+      const dx=a.x-b.x, dy=a.y-b.y, d=Math.hypot(dx,dy);
+      if(d<110){ Q.ctx.globalAlpha = (110-d)/110 * .25; Q.ctx.beginPath(); Q.ctx.moveTo(a.x,a.y); Q.ctx.lineTo(b.x,b.y); Q.ctx.strokeStyle="rgba(90,208,255,1)"; Q.ctx.stroke(); Q.ctx.globalAlpha=1; }
+    }
+  }
+}
+
+/* =======================
+   Eventos / Inicialización
+======================= */
+function setupControls(){
+  const v = $("#voltage"), t = $("#time");
+  const vOut = $("#vOut"), tOut=$("#tOut");
+  v.addEventListener("input", ()=> vOut.textContent=v.value);
+  t.addEventListener("input", ()=> tOut.textContent=t.value);
+  $("#run").addEventListener("click", runMachine);
+  $("#reset").addEventListener("click", resetMachine);
+  $("#fabricar").addEventListener("click", craft);
+  // atajos
+  document.addEventListener("keydown", (e)=>{
+    if(e.key.toLowerCase()==="r"){ resetMachine(); }
+  });
+  // Electrolyte hints (click para autocolocar)
+  const el = makeTag("H2O","Agua (Electrolito)", "nonmetal"); el.addEventListener("dblclick",()=> autoPlaceElectrolyte("H2O"));
+  $("#featured").appendChild(el);
+}
+function autoPlaceElectrolyte(sym){
+  const dz = $('.slot[data-slot="electrolyte"] .dropzone');
+  const tag = makeTag(sym, sym+" (Electrolito)", "nonmetal"); tag.classList.add("small");
+  dz.innerHTML=""; dz.appendChild(tag);
+  ST.slots.electrolyte = { symbol: sym, name: sym, type:"nonmetal" };
+}
+
+function setupQuantumSwitch(){
+  const sw = $("#qmode");
+  sw.addEventListener("change", ()=>{
+    Q.active = sw.checked;
+    toast(Q.active ? "Modo Cuántico activado" : "Modo Cuántico desactivado");
+  });
+}
+
+/* Boot */
+renderPTable();
+setupSlots();
+setupNav();
+renderFeatured();
+renderRecipes();
+setupBoard();
+setupControls();
+initQuantum();
+setupQuantumSwitch();
+</script>
+</body>
+</html>
